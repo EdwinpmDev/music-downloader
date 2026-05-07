@@ -1,2 +1,14 @@
 .venv_musicDownloader/
 __pycache__
+
+# Exclusion of generated audio and video files / Exclusión de archivos de audio y video generados
+*.mp3
+*.aac
+*.opus
+*.m4a
+*.ogg
+*.webm
+
+*.mp4
+*.m4a
+*.webm
