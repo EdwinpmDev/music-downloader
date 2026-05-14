@@ -126,8 +126,8 @@ class MainWindow(QWidget):
 
 
     def read_directory(self):
-        if os.path.exists('config.json'):
-            with open('config.json', 'r') as archive:
+        if os.path.exists('.config/config.json'):
+            with open('.config/config.json', 'r') as archive:
                 data = json.load(archive)
                 path = data['last_directory']
             self.directory_selected = path
@@ -136,9 +136,12 @@ class MainWindow(QWidget):
 
 
     def save_directory(self):
+        if not os.path.exists('.config'):
+            os.makedirs('.config')
         dictionary = {"last_directory": self.directory_selected}
-        with open('config.json', 'w') as archive:
-            json.dump(dictionary, archive)
+
+        with open('.config/config.json', 'w') as archive:
+            json.dump(dictionary, archive, indent=4)
             print("Path saved")
 
 
