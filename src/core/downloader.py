@@ -40,9 +40,21 @@ def download_any_media(urls: list, selected_format: str, selected_media: str, di
             ydl_opts = {
                 'format': f'{selected_format}/bestaudio/best',
                 'ffmpeg_location': ffmpeg_location,
-                'postprocessors': [{  
+                'writethumbnail': True,
+                'postprocessors': [
+                {  
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': selected_format,
+                },
+                {
+                'key': 'FFmpegThumbnailsConvertor',
+                'format': 'jpg',
+                },
+                {
+                'key': 'EmbedThumbnail',
+                },
+                {
+                'key': 'FFmpegMetadata',
                 }]
             }
 
@@ -58,9 +70,21 @@ def download_any_media(urls: list, selected_format: str, selected_media: str, di
                 'format': f'{selected_format}/bestaudio/best',
                 'outtmpl': f'{directory_selected}/%(title)s.%(ext)s',
                 'ffmpeg_location': ffmpeg_location,
+                'writethumbnail': True,
                 'postprocessors': [{  
                 'key': 'FFmpegExtractAudio',
+                'key': 'FFmpegExtractAudio',
                 'preferredcodec': selected_format,
+                },
+                {
+                'key': 'FFmpegThumbnailsConvertor',
+                'format': 'jpg',
+                },
+                {
+                'key': 'EmbedThumbnail',
+                },
+                {
+                'key': 'FFmpegMetadata',
                 }]
             }
 
