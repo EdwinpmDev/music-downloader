@@ -1,13 +1,43 @@
-/* 
-POPSCALE = {
-    'popscale_Design':{
-        'padding': '10px',
-        'border': 'none',
-        'border-radius': '50px',
-        'background-color':'#5c2e7d',
-        'color': 'White',
-        'Font-weight': '600',
-        'Font-size': '50'
-    }
+#MainWindow {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+    stop:0 #edf5f9, stop:1 #c8cfe3);
 }
-*/
+
+QLineEdit {
+    padding: 8px;
+    border: 1px solid black;
+    border-radius: 10px;
+    background-color: #f1f4fd;
+    color:black;
+    font-weight: 500;
+}
+
+QPushButton {
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #00c1a6;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #0aa38c;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+QComboBox {
+    padding: 5px;
+    border-radius: 5px;
+    background-color: #00c1a6;
+    font-weight: 500;
+}
+
+QComboBox QAbstractItemView {
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 5px;
+    color: black;
+    background-color: #f1f4fd;
+    outline: none; 
+}

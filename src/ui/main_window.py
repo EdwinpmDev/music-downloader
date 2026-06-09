@@ -1,13 +1,16 @@
 import sys
 import os
 import json
-from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QMessageBox, QFileDialog,QComboBox, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit
+from PyQt6.QtWidgets import QApplication, QPushButton, QFileDialog,QComboBox, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit
 from PyQt6.QtCore import QThread
 
 from src.core.downloader import *
 
 def main():
     app = QApplication(sys.argv)
+    with open('resources/styles/styles.css', 'r') as f:
+        styles = f.read()
+        app.setStyleSheet(styles)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
@@ -36,6 +39,7 @@ class DownloadThread(QThread):
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.setObjectName("MainWindow")
         self.startUI()
 
     # Interface
