@@ -33,95 +33,75 @@ def get_ffmpeg_path():
 #Initialize global variable
 ffmpeg_location = get_ffmpeg_path()
 
+# Get media info
+def get_media_info(url: str) -> dict:
+    ydl_opts = {
+        'quiet': True,
+        'skip_download': True,
+    } 
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info=ydl.extract_info(url, download=False)
+        return{
+            'title': info.get('title', 'No title'),
+            'thumbnail': info.get('thumbnail', '')
+        }
+
 # Structure / Estructura
-def download_any_media(urls: list, selected_format: str, selected_media: str, directory_selected: str):
+def download_any_media(
+        urls: list,
+        selected_format: str,
+        selected_media: str,
+        directory_selected: str
+):
+
+    ydl_opts = {
+        'ffmpeg_location': ffmpeg_location
+    }
+
+    if directory_selected:
+        ydl_opts['outtmpl'] = os.path.join(
+            directory_selected,
+            '%(title)s.%(ext)s'
+        )
+
     if selected_media == "Audio":
-        if directory_selected == '':
-            ydl_opts = {
-                'format': f'{selected_format}/bestaudio/best',
-                'ffmpeg_location': ffmpeg_location,
-                'writethumbnail': True,
-                'postprocessors': [
-                {  
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': selected_format,
-                },
-                {
-                'key': 'FFmpegThumbnailsConvertor',
-                'format': 'jpg',
-                },
-                {
-                'key': 'EmbedThumbnail',
-                },
-                {
-                'key': 'FFmpegMetadata',
-                }]
-            }
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                error_code = ydl.download(urls)
-
-                if error_code !=0:
-                    print("Error download")
-                else:
-                    print("Succesful download")
-        else:
-            ydl_opts = {
-                'format': f'{selected_format}/bestaudio/best',
-                'outtmpl': f'{directory_selected}/%(title)s.%(ext)s',
-                'ffmpeg_location': ffmpeg_location,
-                'writethumbnail': True,
-                'postprocessors': [{  
-                'key': 'FFmpegExtractAudio',
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': selected_format,
+        ydl_opts.update({
+            'format': f'{selected_format}/bestaudio/best',
+            'writethumbnail': True,
+            'postprocessors': [
+                {
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': selected_format
                 },
                 {
-                'key': 'FFmpegThumbnailsConvertor',
-                'format': 'jpg',
+                    'key': 'FFmpegThumbnailsConvertor',
+                    'format': 'jpg'
                 },
                 {
-                'key': 'EmbedThumbnail',
+                    'key': 'EmbedThumbnail'
                 },
                 {
-                'key': 'FFmpegMetadata',
-                }]
-            }
+                    'key': 'FFmpegMetadata'
+                }
+            ]
+        })
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                error_code = ydl.download(urls)
-
-                if error_code !=0:
-                    print("Error download")
-                else:
-                    print("Succesful download")
     else:
-        if directory_selected == '':
-            ydl_opts = {
-                'format': 'bestvideo+bestaudio/best',
-                'ffmpeg_location': ffmpeg_location,
-                'merge_output_format': selected_format
-            }
-            
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                error_code = ydl.download(urls)
 
-                if error_code !=0:
-                    print("Error download")
-                else:
-                    print("Succesful download")
+        ydl_opts.update({
+            'format': 'bestvideo+bestaudio/best',
+            'merge_output_format': selected_format
+        })
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            error_code = ydl.download(urls)
+
+        if error_code != 0:
+            print("Error download")
         else:
-            ydl_opts = {
-                'format': 'bestvideo+bestaudio/best',
-                'merge_output_format': selected_format,
-                'ffmpeg_location': ffmpeg_location,
-                'outtmpl': f'{directory_selected}/%(title)s.%(ext)s'
-            }
-            
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                error_code = ydl.download(urls)
+            print("Successful download")
 
-                if error_code !=0:
-                    print("Error download")
-                else:
-                    print("Succesful download")
+    except Exception as e:
+        print(f"Download failed: {e}")

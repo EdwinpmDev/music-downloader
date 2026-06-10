@@ -3,6 +3,11 @@
     stop:0 #edf5f9, stop:1 #c8cfe3);
 }
 
+QLabel {
+    color: black;
+    font-weight: 500;
+}
+
 QLineEdit {
     padding: 8px;
     border: 1px solid black;
