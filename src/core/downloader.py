@@ -38,13 +38,11 @@ def get_media_info(url: str) -> dict:
     ydl_opts = {
         'quiet': True,
         'skip_download': True,
+        'extract_flat': False
     } 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info=ydl.extract_info(url, download=False)
-        return{
-            'title': info.get('title', 'No title'),
-            'thumbnail': info.get('thumbnail', '')
-        }
+        return info
 
 # Structure / Estructura
 def download_any_media(
