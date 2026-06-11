@@ -1,31 +1,74 @@
+* {
+    font-family: "Inter", sans-serif;
+}
+
 #MainWindow {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-    stop:0 #edf5f9, stop:1 #c8cfe3);
+    background:  #091017; 
+}
+
+#containerLayout0 {
+    background-color: none;
+    border: 0.5px solid #374e57;
+    border-radius: 15px;
+}
+
+#lblDefaultText1 {
+    color: #929da3;
+    font-size: 15px;
+}
+
+#containerLayout1 {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+    stop:0 #152129, stop:1 #092c31);
+    border: 0.5px solid #374e57;
+    border-radius: 15px;
+}
+
+#lblTitleVideo {
+    font-weight: 800;
+}
+
+#lblChannelInfo, #lblTimeInfo, #lblDateInfo {
+    color: #c2c7cc;
+}
+
+#qhbox_layout1 {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+    stop:0 #044847, stop:1 #093135);
+    border-radius: 15px;
+}
+
+#containerLayout2, #containerLayout3, #containerLayout4 {
+    background-color:  #0e1921;
+    border: 0.5px solid #374e57;
+    border-radius: 15px;
 }
 
 QLabel {
-    color: black;
+    color: white;
     font-weight: 500;
 }
 
 QLineEdit {
     padding: 8px;
-    border: 1px solid black;
+    border: 0.7px solid  #1c2a32;
     border-radius: 10px;
-    background-color: #f1f4fd;
-    color:black;
+    background-color: #0D151D;
+    color:white;
     font-weight: 500;
 }
 
-QPushButton {
+#downloadButton, #directorySelector, #directoryOpen {
     padding: 10px;
+    border: 0.5px solid #04cecc;
     border-radius: 10px;
-    background-color: #00c1a6;
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+    stop:0 #00A69C, stop:1 #016766);
     font-size: 12px;
     font-weight: 500;
 }
 
-QPushButton:hover {
+#downloadButton:hover, #directorySelector:hover, #directoryOpen:hover {
     background-color: #0aa38c;
     font-size: 12px;
     font-weight: 500;
@@ -33,16 +76,18 @@ QPushButton:hover {
 
 QComboBox {
     padding: 5px;
+    border: 1.1px solid  #1c2a32;
     border-radius: 5px;
-    background-color: #00c1a6;
+    color: white;
+    background-color: #0e1a22;
     font-weight: 500;
 }
 
 QComboBox QAbstractItemView {
     padding: 5px;
-    border: 1px solid black;
+    border: 1px solid #1c2a32;
     border-radius: 5px;
-    color: black;
-    background-color: #f1f4fd;
+    color: white;
+    background-color: #00827c;
     outline: none; 
 }
