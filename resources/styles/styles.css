@@ -38,7 +38,7 @@
     border-radius: 15px;
 }
 
-#containerLayout2, #containerLayout3, #containerLayout4 {
+#containerPlaylist, #containerLayout2, #containerLayout3, #containerLayout4 {
     background-color:  #0e1921;
     border: 0.5px solid #374e57;
     border-radius: 15px;
@@ -58,7 +58,7 @@ QLineEdit {
     font-weight: 500;
 }
 
-#downloadButton, #directorySelector, #directoryOpen {
+#buttonPlaylist, #downloadButton, #directorySelector, #directoryOpen {
     padding: 10px;
     border: 0.5px solid #04cecc;
     border-radius: 10px;
@@ -68,7 +68,7 @@ QLineEdit {
     font-weight: 500;
 }
 
-#downloadButton:hover, #directorySelector:hover, #directoryOpen:hover {
+#buttonPlaylist:hover, #downloadButton:hover, #directorySelector:hover, #directoryOpen:hover {
     background-color: #0aa38c;
     font-size: 12px;
     font-weight: 500;
