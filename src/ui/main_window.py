@@ -1,14 +1,19 @@
 import sys
 import os
-import json
 from datetime import datetime
-from PyQt6.QtWidgets import QApplication, QPushButton, QLabel,QFileDialog,QComboBox, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
+
+from PyQt6.QtWidgets import (
+    QApplication, QPushButton, QLabel, QFileDialog,
+    QComboBox, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit
+)
+from PyQt6.QtCore import Qt, QTimer, QUrl
 from PyQt6.QtGui import QPixmap, QImage, QFontDatabase, QDesktopServices, QIcon
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
-from PyQt6.QtCore import QUrl
 
-from src.core.downloader import *
+from src.core.workers import PreviewCover, DownloadThread
+from src.core.settings import read_directory, save_directory
+from src.ui.components.playlist_item import PlaylistItemWidget
+
 
 def main():
     app = QApplication(sys.argv)
@@ -19,44 +24,10 @@ def main():
     with open('resources/styles/styles.css', 'r') as f:
         styles = f.read()
         app.setStyleSheet(styles)
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-
-class PreviewCover(QThread):
-    info_ready = pyqtSignal(dict)
-
-    def __init__(self, url):
-        super().__init__()
-        self.url = url
-
-    def run(self):
-        try:
-            from src.core.downloader import get_media_info
-            info = get_media_info(self.url)
-            self.info_ready.emit(info)
-        except Exception as e:
-            print(f"Error getting info {e}")
-
-class DownloadThread(QThread):
-    def __init__(self, urls, selected_format, selected_media, directory_selected):
-        super().__init__()
-        self.urls = urls
-        self.selected_format = selected_format
-        self.selected_media = selected_media
-        self.directory_selected = directory_selected
-
-    def run(self):
-        try:
-            # Send data to backEnd
-            download_any_media(
-                self.urls, 
-                self.selected_format, 
-                self.selected_media, 
-                self.directory_selected)
-            print("Downloading media...")
-        except Exception as e:
-            print(f"Download error: {e}")
 
 
 class MainWindow(QWidget):
@@ -65,17 +36,16 @@ class MainWindow(QWidget):
         self.setObjectName("MainWindow")
         self.startUI()
 
-    # Interface
     def startUI(self):
-        self.setFixedSize(420, 660)
+        self.setFixedSize(430, 660)
         self.setWindowTitle('MusicDownloader')
         self.interface()
         self.show()
 
     def interface(self):
         self.lbl_default_image1 = QLabel('')
-        pixmap_default_img1 = QPixmap('resources/icons/whiteLink.png')
-        pixmap_default_img1 = pixmap_default_img1.scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        pixmap_default_img1 = QPixmap('resources/icons/musicalNotes.png')
+        pixmap_default_img1 = pixmap_default_img1.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.lbl_default_image1.setPixmap(pixmap_default_img1)
         self.lbl_default_image1.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_default_image1.setObjectName('lblDefaultImage1')
@@ -84,16 +54,8 @@ class MainWindow(QWidget):
         self.lbl_default_text1.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_default_text1.setObjectName('lblDefaultText1')
 
-        '''self.lbl_default_image2 = QLabel('')
-        pixmap_default_img2 = QPixmap('resources/icons/clock.png')
-        pixmap_default_img2 = pixmap_default_img2.scaled(16, 16, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        self.lbl_default_image2.setPixmap(pixmap_default_img2)
-
-        self.lbl_default_text2 = QLabel('Paste a valid video link \nto see video information') '''
-
-
         self.lbl_cover = QLabel('')
-        self.lbl_cover.setMaximumSize(380, 200)
+        self.lbl_cover.setMaximumSize(380, 250)
         self.lbl_cover.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_cover.hide()
 
@@ -120,6 +82,11 @@ class MainWindow(QWidget):
         self.lbl_date_info = QLabel('1 jan. 2004')
         self.lbl_date_info.setObjectName('lblDateInfo')
 
+        self.button_playlist_expand = QPushButton('Playlist', self)
+        self.button_playlist_expand.setFixedSize(80, 35)
+        self.button_playlist_expand.clicked.connect(self.playlist_interaction)
+        self.button_playlist_expand.setObjectName('buttonPlaylist')
+
         self.input_link = QLineEdit(self)
         self.input_link.setPlaceholderText("Paste link here")
         icon_link = QIcon('resources/icons/link.png')
@@ -134,14 +101,13 @@ class MainWindow(QWidget):
         self.button_download.clicked.connect(self.download_media)
         self.button_download.setObjectName('downloadButton')
 
-        self.lbl_download_image = QLabel('')
         icon_download = QIcon('resources/icons/download.png')
         self.button_download.setIcon(icon_download)
 
         self.lbl_format = QLabel('Format')
 
         self.media_selector = QComboBox(self)
-        self.media_selector.addItems(['Audio','Video'])
+        self.media_selector.addItems(['Audio', 'Video'])
         self.media_selector.currentTextChanged.connect(self.media_change)
 
         self.lbl_quality = QLabel('Quality')
@@ -164,8 +130,11 @@ class MainWindow(QWidget):
         self.directory_selector.clicked.connect(self.choose_directory)
         self.directory_selector.setObjectName("directorySelector")
 
-        self.directory_selected = ''
-        self.read_directory()
+        # Read the saved directory using settings.py
+        self.directory_selected = read_directory()
+        if self.directory_selected:
+            self.directory_direction.setPlaceholderText(self.directory_selected)
+
         self.media_change()
 
         self.lbl_language = QLabel('Made with 💚 using Python |')
@@ -190,26 +159,25 @@ class MainWindow(QWidget):
 
         # Layout
         GeneralLayout = QVBoxLayout()
-        GeneralLayout.addStretch()
 
         self.container_cover = QWidget()
         cover_layout = QHBoxLayout(self.container_cover)
         self.container_cover.hide()
-        
+
         self.container_layout0 = QWidget()
         self.container_layout0.setObjectName('containerLayout0')
         h_layout0 = QVBoxLayout(self.container_layout0)
         QstackedWidgets = QVBoxLayout()
         Qsignalponts = QHBoxLayout()
         h_layout0.addLayout(QstackedWidgets)
-        h_layout0.addLayout(Qsignalponts) 
+        h_layout0.addLayout(Qsignalponts)
         Qstackedrow1 = QHBoxLayout()
         Qstackedrow2 = QHBoxLayout()
         QstackedWidgets.addLayout(Qstackedrow1)
         QstackedWidgets.addLayout(Qstackedrow2)
 
-
         self.container_layout1 = QWidget()
+        self.container_layout1.setFixedHeight(90)
         self.container_layout1.setObjectName('containerLayout1')
         self.container_layout1.hide()
         h_layout1 = QHBoxLayout(self.container_layout1)
@@ -228,13 +196,17 @@ class MainWindow(QWidget):
         intern_qvbox_layout1.addLayout(layout1row2)
         intern_qvbox_layout1.addLayout(layout1row3)
 
+        self.container_playlist = QWidget()
+        self.container_playlist.setObjectName('containerPlaylist')
+        self.container_playlist.hide()
+
         self.container_layout2 = QWidget()
         self.container_layout2.setObjectName('containerLayout2')
         self.container_layout2.setMinimumHeight(125)
         v_layout2 = QVBoxLayout(self.container_layout2)
         layout2row1 = QHBoxLayout()
         layout2row2 = QHBoxLayout()
-        layout2row3  = QHBoxLayout()
+        layout2row3 = QHBoxLayout()
         v_layout2.addLayout(layout2row1)
         v_layout2.addLayout(layout2row2)
         v_layout2.addLayout(layout2row3)
@@ -257,7 +229,6 @@ class MainWindow(QWidget):
 
         cover_layout.addWidget(self.lbl_cover)
 
-        #h_layout0.addWidget(self.lbl_cover)
         QstackedWidgets.setAlignment(Qt.AlignmentFlag.AlignCenter)
         Qstackedrow1.addWidget(self.lbl_default_image1)
         Qstackedrow1.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -273,6 +244,7 @@ class MainWindow(QWidget):
         layout1row3.addWidget(self.lbl_date_img)
         layout1row3.addWidget(self.lbl_date_info)
         layout1row3.addStretch()
+        layout1row3.addWidget(self.button_playlist_expand)
 
         layout2row1.addWidget(self.input_link)
         layout2row1.addWidget(self.button_download)
@@ -299,22 +271,25 @@ class MainWindow(QWidget):
 
         GeneralLayout.addWidget(self.container_cover)
         GeneralLayout.addWidget(self.container_layout0, stretch=1)
-        GeneralLayout.addSpacing(8)
+        GeneralLayout.addSpacing(2)
         GeneralLayout.addWidget(self.container_layout1)
         GeneralLayout.addSpacing(8)
+        GeneralLayout.addWidget(self.container_playlist, stretch=1)
         GeneralLayout.addWidget(self.container_layout2)
         GeneralLayout.addSpacing(8)
         GeneralLayout.addWidget(self.container_layout3)
         GeneralLayout.addWidget(self.container_layout4)
+        GeneralLayout.addStretch()
 
         self.setLayout(GeneralLayout)
 
-    # Logic
+        # Network administrator for uploading cover images
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self.loaded_cover)
 
-    def show_cover(self, urls):
-        request = QNetworkRequest(QUrl(urls))
+    # Cover logic
+    def show_cover(self, url):
+        request = QNetworkRequest(QUrl(url))
         self.network_manager.get(request)
 
     def loaded_cover(self, reply):
@@ -323,21 +298,21 @@ class MainWindow(QWidget):
             image = QImage()
             image.loadFromData(data_image)
             pixmap = QPixmap.fromImage(image)
-            self.lbl_cover.setPixmap(pixmap)
-            pixmap = pixmap.scaledToWidth(380, Qt.TransformationMode.SmoothTransformation)
+            pixmap = pixmap.scaled(380, 250, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.lbl_cover.setPixmap(pixmap)
             self.lbl_cover.show()
             self.container_cover.show()
             self.container_layout0.hide()
             self.container_layout1.show()
-        else: 
+        else:
             self.lbl_cover.hide()
             self.lbl_cover.setText('Error: Image not found')
             reply.deleteLater()
 
+    # Preview
     def on_text_changed(self, text):
         if len(text) > 10:
-            self.preview_timer.start(100) # ms wait
+            self.preview_timer.start(100)
         else:
             self.preview_timer.stop()
 
@@ -345,12 +320,15 @@ class MainWindow(QWidget):
         url = self.input_link.text()
         if '&list=' in url:
             url = url.split('&list=')[0]
+            self.button_playlist_expand.show()
+        else:
+            self.button_playlist_expand.hide()
         self.preview_thread = PreviewCover(url)
         self.preview_thread.info_ready.connect(self.show_preview)
         self.preview_thread.start()
 
     def show_preview(self, info):
-        self.show_cover(info.get('thumbnail',''))
+        self.show_cover(info.get('thumbnail', ''))
         self.lbl_title_info.setText(info.get('title', 'Unknown title'))
         canal = info.get('channel') or info.get('uploader') or 'Unknown channel'
         self.lbl_channel_info.setText(canal)
@@ -366,18 +344,16 @@ class MainWindow(QWidget):
         if simple_date:
             try:
                 obj_date = datetime.strptime(simple_date, "%Y%m%d")
-                final_date = obj_date.strftime("%d %b %Y")
-                self.lbl_date_info.setText(final_date)
+                self.lbl_date_info.setText(obj_date.strftime("%d %b %Y"))
             except ValueError:
                 self.lbl_date_info.setText(simple_date)
         else:
             self.lbl_date_info.setText("Unknown date")
-        
 
+    # Format selector
     def media_change(self):
         self.format_selector.clear()
         self.selected_media = self.media_selector.currentText()
-
         if self.selected_media == "Audio":
             self.format_selector.addItems(['mp3', 'aac', 'opus', 'm4a', 'ogg', 'webm'])
             pixmap = QPixmap('resources/icons/musicplayer.png')
@@ -387,72 +363,45 @@ class MainWindow(QWidget):
         pixmap = pixmap.scaled(40, 40, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.lbl_img_info.setPixmap(pixmap)
 
-
+    # Download
     def download_media(self):
-        # Collect data
         link = self.input_link.text()
-        selected_format = self.format_selector.currentText()
-        urls = [link]
-        # Checks if there's a valid URL
-        if link == '':
+        if not link:
             print("Put a valid URL")
             return
-        try:
-            # Create thread
-            self.download_thread = DownloadThread(
-                urls=urls,
-                selected_format=selected_format,
-                selected_media=self.selected_media,
-                directory_selected=self.directory_selected
-            )
+        self.download_thread = DownloadThread(
+            urls=[link],
+            selected_format=self.format_selector.currentText(),
+            selected_media=self.selected_media,
+            directory_selected=self.directory_selected,
+        )
+        self.download_thread.start()
+        print("Download started in the background")
 
-            # Start thread
-            self.download_thread.start()
-            print("Download started in the background")
-        except Exception as e:
-            print(f"Download error: {e}")
-
-
+    # Folder
     def choose_directory(self):
         directory = QFileDialog.getExistingDirectory(self, 'Choose carpet')
         if directory:
-            print(f'Directoy choosen: {directory}')
             self.directory_selected = directory
-            self.save_directory()
+            save_directory(directory)
             self.directory_direction.setText(directory)
-
-
-
-    def read_directory(self):
-        if os.path.exists('.config/config.json'):
-            with open('.config/config.json', 'r') as archive:
-                data = json.load(archive)
-                path = data['last_directory']
-                self.directory_direction.setPlaceholderText(f'{path}')
-            self.directory_selected = path
-        else:
-            self.directory_selected = ''
-
-
-    def save_directory(self):
-        if not os.path.exists('.config'):
-            os.makedirs('.config')
-        dictionary = {"last_directory": self.directory_selected}
-
-        with open('.config/config.json', 'w') as archive:
-            json.dump(dictionary, archive, indent=4)
-            print("Path saved")
 
     def open_download_folder(self):
         path = self.directory_selected
         if path and os.path.exists(path):
-            local_url = QUrl.fromLocalFile(path)
-            QDesktopServices.openUrl(local_url)
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
         else:
             print("Error: You haven't selected a download path yet, or the selected path doesn't exist.")
 
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    ventana = MainWindow()
-    sys.exit(app.exec())
+    # Playlist
+    def playlist_interaction(self):
+        if self.container_playlist.isHidden():
+            self.container_playlist.show()
+            self.container_layout2.hide()
+            self.container_layout3.hide()
+            self.container_layout4.hide()
+        else:
+            self.container_playlist.hide()
+            self.container_layout2.show()
+            self.container_layout3.show()
+            self.container_layout4.show()
